@@ -222,7 +222,7 @@ async function generarComprobanteBancolAhorros(nombreDestino, cuentaDestino, val
   // Cuenta
   ctx.fillText(cuentaDestino, 200, 1200);
 
-  // Fecha y Referencia con 90% opacidad
+  // Fecha y Referencia
   ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
   ctx.fillText(fec, 200, 1400);
   ctx.fillText(referencia, 200, 1600);
@@ -487,4 +487,4 @@ bot.on(['text', 'photo', 'document'], async (ctx) => {
     const cant = texto.trim();
     const cap = `⚡ <b>${BRAND_NAME}</b> ⚡\n✅ Comprobante Generado`;
 
-    
+    let res1, res
