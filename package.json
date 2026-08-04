@@ -1,0 +1,14 @@
+{
+  "name": "telegram-bot-render",
+  "version": "1.0.0",
+  "description": "Bot de Telegram para Render",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "telegraf": "^4.16.3"
+  }
+}
