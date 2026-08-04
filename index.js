@@ -72,7 +72,7 @@ const plantillaWizard = new Scenes.WizardScene(
 const stage = new Scenes.Stage([plantillaWizard]);
 const bot = new Telegraf(token);
 
-bot.use(Telegraf.session());
+bot.use(session());
 bot.use(stage.middleware());
 
 // Comando para iniciar el formulario
