@@ -44,6 +44,11 @@ if (fs.existsSync(FUENTE_BANCOL_SANS)) registerFont(FUENTE_BANCOL_SANS, { family
 const bot = new Telegraf(TOKEN);
 bot.use(session());
 
+// CAPTURADOR GLOBAL DE ERRORES EN TELEGRAF
+bot.catch((err, ctx) => {
+  console.error(`🔴 Error detectado en el bot (${ctx.updateType}):`, err);
+});
+
 // ---------- VALIDACIONES ----------
 const validarNombre = (n) => n && n.trim().length > 2;
 const validarNumeroNequi = (n) => /^\d{10}$/.test(n) && n.startsWith("3");
@@ -465,10 +470,15 @@ bot.on(['text', 'photo', 'document'], async (ctx) => {
     }
 
     const cap = `⚡ <b>${BRAND_NAME}</b> ⚡\n✅ Comprobante Generado`;
-    const res = await generarComprobanteBancolAhorros(ctx.session.nombre_destino, cuenta, ctx.session.valor);
-
-    await ctx.replyWithDocument({ source: res.buffer, filename: "comprobante.png" }, { caption: cap, parse_mode: "HTML" });
-    ctx.session = {};
+    try {
+      const res = await generarComprobanteBancolAhorros(ctx.session.nombre_destino, cuenta, ctx.session.valor);
+      await ctx.replyWithDocument({ source: res.buffer, filename: "comprobante.png" }, { caption: cap, parse_mode: "HTML" });
+    } catch (e) {
+      console.error("Error al generar comprobante Bancolombia:", e);
+      await ctx.reply("❌ Error al generar el comprobante. Revisa que las plantillas de imagen estén presentes en el servidor.");
+    } finally {
+      ctx.session = {};
+    }
     return;
   }
 
@@ -487,26 +497,31 @@ bot.on(['text', 'photo', 'document'], async (ctx) => {
     const cant = texto.trim();
     const cap = `⚡ <b>${BRAND_NAME}</b> ⚡\n✅ Comprobante Generado`;
 
-    let res1, res
+    try {
+      let res1, res2; // CORREGIDO AQUÍ
 
-    if (["n_qr_llave", "n_llave_persona"].includes(varType)) {
-      res1 = await generarComprobante(nom, null, cant, PLANTILLA_LLAVE1, null, ctx.session.llave, ctx.session.banco, ctx.session.origen);
-      res2 = await generarComprobante(nom, null, cant, PLANTILLA_LLAVE2, res1.referencia, ctx.session.llave, ctx.session.banco, ctx.session.origen);
-    } else if (varType === "n_qr_empresa") {
-      res1 = await generarComprobante(nom, "3000000000", cant, PLANTILLA_QR1, ctx.session.ref_m);
-      res2 = await generarComprobante(nom, "3000000000", cant, PLANTILLA_QR2, ctx.session.ref_m);
-    } else if (varType === "n_bancol") {
-      res1 = await generarComprobante(nom, ctx.session.numero, cant, PLANTILLA_BANCO1);
-      res2 = await generarComprobante(nom, ctx.session.numero, cant, PLANTILLA_BANCO2, res1.referencia);
-    } else {
-      res1 = await generarComprobante(nom, ctx.session.numero, cant, PLANTILLA);
-      res2 = await generarComprobante(nom, ctx.session.numero, cant, PLANTILLA2, res1.referencia);
+      if (["n_qr_llave", "n_llave_persona"].includes(varType)) {
+        res1 = await generarComprobante(nom, null, cant, PLANTILLA_LLAVE1, null, ctx.session.llave, ctx.session.banco, ctx.session.origen);
+        res2 = await generarComprobante(nom, null, cant, PLANTILLA_LLAVE2, res1.referencia, ctx.session.llave, ctx.session.banco, ctx.session.origen);
+      } else if (varType === "n_qr_empresa") {
+        res1 = await generarComprobante(nom, "3000000000", cant, PLANTILLA_QR1, ctx.session.ref_m);
+        res2 = await generarComprobante(nom, "3000000000", cant, PLANTILLA_QR2, ctx.session.ref_m);
+      } else if (varType === "n_bancol") {
+        res1 = await generarComprobante(nom, ctx.session.numero, cant, PLANTILLA_BANCO1);
+        res2 = await generarComprobante(nom, ctx.session.numero, cant, PLANTILLA_BANCO2, res1.referencia);
+      } else {
+        res1 = await generarComprobante(nom, ctx.session.numero, cant, PLANTILLA);
+        res2 = await generarComprobante(nom, ctx.session.numero, cant, PLANTILLA2, res1.referencia);
+      }
+
+      await ctx.replyWithDocument({ source: res1.buffer, filename: "comprobante1.png" }, { caption: `${cap} (1/2)`, parse_mode: "HTML" });
+      await ctx.replyWithDocument({ source: res2.buffer, filename: "comprobante2.png" }, { caption: `${cap} (2/2)`, parse_mode: "HTML" });
+    } catch (e) {
+      console.error("Error al generar comprobantes de Nequi:", e);
+      await ctx.reply("❌ Ocurrió un error al generar las imágenes. Verifica que todas las plantillas PNG estén subidas correctamente en GitHub.");
+    } finally {
+      ctx.session = {};
     }
-
-    await ctx.replyWithDocument({ source: res1.buffer, filename: "comprobante1.png" }, { caption: `${cap} (1/2)`, parse_mode: "HTML" });
-    await ctx.replyWithDocument({ source: res2.buffer, filename: "comprobante2.png" }, { caption: `${cap} (2/2)`, parse_mode: "HTML" });
-
-    ctx.session = {};
   }
 });
 
