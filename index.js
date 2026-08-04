@@ -19,7 +19,7 @@ const plantillaWizard = new Scenes.WizardScene(
   
   // Paso 1: Pedir Nombre
   async (ctx) => {
-    ctx.wizard.state.datos = {}; // Crear contenedor de datos
+    ctx.wizard.state.datos = {}; // Contenedor de datos
     await ctx.reply('👋 ¡Hola! Vamos a generar tu plantilla.\n\nPor favor, ingresa tu **Nombre**:');
     return ctx.wizard.next();
   },
@@ -76,7 +76,7 @@ const bot = new Telegraf(token);
 bot.use(session());
 bot.use(stage.middleware());
 
-// Comando para iniciar el formulario
+// Comandos
 bot.command('generar', (ctx) => ctx.scene.enter('PLANTILLA_WIZARD'));
 bot.start((ctx) => ctx.reply('Usa el comando /generar para crear una plantilla personalizada.'));
 
@@ -86,13 +86,14 @@ bot.action('generar_plantilla', async (ctx) => {
   await ctx.reply('🎨 Editando la plantilla...');
 
   try {
-    const { nombre, numero, cantidad } = ctx.scene.session.datos || {};
+    // Extraer datos desde el estado de la escena de forma segura
+    const { nombre, numero, cantidad } = ctx.wizard.state?.datos || ctx.scene.session.state?.datos || {};
 
-    // 1. Cargar la imagen base desde GitHub/Disco
+    // 1. Cargar la imagen base desde la raíz del proyecto
     const imagePath = path.resolve('./plantilla1.png');
     const image = await loadImage(imagePath);
 
-    // 2. Crear lienzo con el mismo tamaño de la imagen
+    // 2. Crear el lienzo con las dimensiones exactas de la imagen
     const canvas = createCanvas(image.width, image.height);
     const ctxCanvas = canvas.getContext('2d');
 
@@ -100,36 +101,36 @@ bot.action('generar_plantilla', async (ctx) => {
     ctxCanvas.drawImage(image, 0, 0, image.width, image.height);
 
     // 3. Estilo del texto (Negro, grande y centrado)
-    ctxCanvas.fillStyle = '#000000'; // Color negro puro
-    ctxCanvas.font = 'bold 55px Arial'; // Tamaño grande de letra
-    ctxCanvas.textAlign = 'center'; // Alinea horizontalmente al centro
-    ctxCanvas.textBaseline = 'middle'; // Alinea verticalmente al centro
+    ctxCanvas.fillStyle = '#000000';
+    ctxCanvas.font = 'bold 55px Arial';
+    ctxCanvas.textAlign = 'center';
+    ctxCanvas.textBaseline = 'middle';
 
-    // 4. Puntos medios de la imagen
+    // 4. Puntos medios para el centrado
     const centerX = image.width / 2;
     const centerY = image.height / 2;
-    const espaciado = 75; // Distancia vertical entre cada línea
+    const espaciado = 75; // Distancia entre renglones
 
-    // 5. Estampar los datos centrados en la plantilla
+    // 5. Estampar los datos centrados
     ctxCanvas.fillText(`Nombre: ${nombre}`, centerX, centerY - espaciado);
     ctxCanvas.fillText(`Número: ${numero}`, centerX, centerY);
     ctxCanvas.fillText(`Cantidad: ${cantidad}`, centerX, centerY + espaciado);
 
-    // 6. Convertir la imagen a Buffer y enviarla por Telegram
+    // 6. Convertir a Buffer y enviar por Telegram
     const buffer = canvas.toBuffer('image/png');
     await ctx.replyWithPhoto({ source: buffer }, { caption: '✅ ¡Aquí tienes tu plantilla generada!' });
 
-    // Salir del flujo
+    // Salir del flujo de la escena
     return ctx.scene.leave();
 
   } catch (error) {
     console.error('Error al generar la imagen:', error);
-    await ctx.reply('❌ Ocurrió un error al cargar o generar la plantilla. Verifica que "plantilla1.png" existe en el proyecto.');
+    await ctx.reply('❌ Ocurrió un error al cargar o generar la plantilla. Verifica que "plantilla1.png" existe en la raíz del proyecto.');
     return ctx.scene.leave();
   }
 });
 
-// --- CONFIGURACIÓN DE SERVIDOR (RENDER vs LOCAL) ---
+// --- CONFIGURACIÓN DE SERVIDOR (WEBHOOK EN RENDER / POLLING EN LOCAL) ---
 const app = express();
 
 if (domain) {
@@ -142,4 +143,4 @@ if (domain) {
   bot.launch();
   process.once('SIGINT', () => bot.stop('SIGINT'));
   process.once('SIGTERM', () => bot.stop('SIGTERM'));
-  }
+}
