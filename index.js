@@ -1,4 +1,4 @@
-import { Telegraf, Sessions, Scenes, Markup } from 'telegraf';
+import { Telegraf, session, Scenes, Markup } from 'telegraf';
 import express from 'express';
 import { createCanvas, loadImage } from 'canvas';
 import path from 'path';
