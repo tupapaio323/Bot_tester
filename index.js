@@ -4,7 +4,6 @@ import express from 'express';
 import { createCanvas, loadImage } from 'canvas';
 import path from 'path';
 
-
 const token = process.env.BOT_TOKEN;
 const port = process.env.PORT || 3000;
 const domain = process.env.RENDER_EXTERNAL_URL;
@@ -100,16 +99,23 @@ bot.action('generar_plantilla', async (ctx) => {
     // Dibuja la plantilla de fondo
     ctxCanvas.drawImage(image, 0, 0, image.width, image.height);
 
-    // 3. Estilo del texto
-    ctxCanvas.fillStyle = '#000000'; // Color del texto (Negro)
-    ctxCanvas.font = 'bold 32px Arial'; // Tamaño y fuente
+    // 3. Estilo del texto (Negro, grande y centrado)
+    ctxCanvas.fillStyle = '#000000'; // Color negro puro
+    ctxCanvas.font = 'bold 55px Arial'; // Tamaño grande de letra
+    ctxCanvas.textAlign = 'center'; // Alinea horizontalmente al centro
+    ctxCanvas.textBaseline = 'middle'; // Alinea verticalmente al centro
 
-    // 4. Estampar los datos (Ajusta x e y según donde quieras que queden en la plantilla)
-    ctxCanvas.fillText(`Nombre: ${nombre}`, 100, 200);   // (Texto, X, Y)
-    ctxCanvas.fillText(`Número: ${numero}`, 100, 260);
-    ctxCanvas.fillText(`Cantidad: ${cantidad}`, 100, 320);
+    // 4. Puntos medios de la imagen
+    const centerX = image.width / 2;
+    const centerY = image.height / 2;
+    const espaciado = 75; // Distancia vertical entre cada línea
 
-    // 5. Convertir la imagen a Buffer y enviarla por Telegram
+    // 5. Estampar los datos centrados en la plantilla
+    ctxCanvas.fillText(`Nombre: ${nombre}`, centerX, centerY - espaciado);
+    ctxCanvas.fillText(`Número: ${numero}`, centerX, centerY);
+    ctxCanvas.fillText(`Cantidad: ${cantidad}`, centerX, centerY + espaciado);
+
+    // 6. Convertir la imagen a Buffer y enviarla por Telegram
     const buffer = canvas.toBuffer('image/png');
     await ctx.replyWithPhoto({ source: buffer }, { caption: '✅ ¡Aquí tienes tu plantilla generada!' });
 
@@ -136,4 +142,4 @@ if (domain) {
   bot.launch();
   process.once('SIGINT', () => bot.stop('SIGINT'));
   process.once('SIGTERM', () => bot.stop('SIGTERM'));
-                  }
+  }
