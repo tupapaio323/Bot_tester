@@ -1,7 +1,9 @@
-import { Telegraf, session, Scenes, Markup } from 'telegraf';
+import pkg from 'telegraf';
+const { Telegraf, session, Scenes, Markup } = pkg;
 import express from 'express';
 import { createCanvas, loadImage } from 'canvas';
 import path from 'path';
+
 
 const token = process.env.BOT_TOKEN;
 const port = process.env.PORT || 3000;
